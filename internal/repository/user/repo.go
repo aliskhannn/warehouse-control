@@ -24,7 +24,8 @@ func NewRepository(db *dbpg.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) Create(ctx context.Context, user *model.User) (uuid.UUID, error) {
+// CreateUser add a new user to database.
+func (r *Repository) CreateUser(ctx context.Context, user *model.User) (uuid.UUID, error) {
 	query := `
 		INSERT INTO users (username, password_hash, role)
 		VALUES ($1, $2, $3)
