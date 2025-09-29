@@ -56,6 +56,7 @@ func (r *Repository) GetUserByID(ctx context.Context, userID uuid.UUID) (*model.
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
+
 		return nil, fmt.Errorf("query user by id: %w", err)
 	}
 	return &u, nil
@@ -81,6 +82,7 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
+
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
