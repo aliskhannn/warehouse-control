@@ -36,31 +36,21 @@ func New(
 		// --- Item routes ---
 		itemGroup := api.Group("/items")
 		{
-			// Public: anyone can view items
+			// Public GET routes (all roles)
 			itemGroup.GET("", itemHandler.GetAll)
 			itemGroup.GET("/:id", itemHandler.GetByID)
 
-			// Protected routes
+			// Protected routes (requires JWT)
 			itemGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL))
 			{
-				// Admin: full access (create, update, delete)
-				adminGroup := itemGroup.Group("")
-				adminGroup.Use(middleware.RequireRole("admin"))
-				{
-					adminGroup.POST("", itemHandler.Create)
-					adminGroup.PUT("/:id", itemHandler.Update)
-					adminGroup.DELETE("/:id", itemHandler.Delete)
-				}
+				// POST /items: admin and manager
+				itemGroup.POST("", middleware.RequireRole("admin", "manager"), itemHandler.Create)
 
-				// Manager: can create and update but not delete
-				managerGroup := itemGroup.Group("")
-				managerGroup.Use(middleware.RequireRole("manager"))
-				{
-					managerGroup.POST("", itemHandler.Create)
-					managerGroup.PUT("/:id", itemHandler.Update)
-				}
+				// PUT /items/:id: admin and manager
+				itemGroup.PUT("/:id", middleware.RequireRole("admin", "manager"), itemHandler.Update)
 
-				// Viewer: read-only access is already handled by public GET endpoints
+				// DELETE /items/:id: admin only
+				itemGroup.DELETE("/:id", middleware.RequireRole("admin"), itemHandler.Delete)
 			}
 		}
 
