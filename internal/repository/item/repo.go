@@ -198,3 +198,12 @@ func (r *Repository) CompareVersions(oldData, newData json.RawMessage) (map[stri
 
 	return oldMap, newMap, nil
 }
+
+// SetCurrentUser sets the current user in the PostgreSQL session for auditing.
+func (r *Repository) SetCurrentUser(ctx context.Context, userID uuid.UUID) error {
+	_, err := r.db.Master.ExecContext(ctx, "SET app.current_user_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("failed to set current_user_id: %w", err)
+	}
+	return nil
+}

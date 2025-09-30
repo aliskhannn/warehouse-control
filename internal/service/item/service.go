@@ -33,6 +33,9 @@ type repository interface {
 
 	// CompareVersions decodes old and new JSONB data from history and returns them as maps.
 	CompareVersions(oldData, newData json.RawMessage) (map[string]interface{}, map[string]interface{}, error)
+
+	// SetCurrentUser sets the current user in the PostgreSQL session for auditing.
+	SetCurrentUser(ctx context.Context, userID uuid.UUID) error
 }
 
 // Service provides business logic for items and item history.
@@ -46,7 +49,12 @@ func NewService(r repository) *Service {
 }
 
 // Create adds a new item with the specified fields.
-func (s *Service) Create(ctx context.Context, name, description string, quantity int, price decimal.Decimal) (uuid.UUID, error) {
+func (s *Service) Create(ctx context.Context, userID uuid.UUID, name, description string, quantity int, price decimal.Decimal) (uuid.UUID, error) {
+	// Set current user.
+	if err := s.repository.SetCurrentUser(ctx, userID); err != nil {
+		return uuid.Nil, fmt.Errorf("set current user: %w", err)
+	}
+
 	item := &model.Item{
 		Name:        name,
 		Description: description,
@@ -83,7 +91,12 @@ func (s *Service) GetAll(ctx context.Context, nameFilter string) ([]*model.Item,
 }
 
 // Update modifies an existing item.
-func (s *Service) Update(ctx context.Context, itemID uuid.UUID, name, description string, quantity int, price decimal.Decimal) error {
+func (s *Service) Update(ctx context.Context, userID, itemID uuid.UUID, name, description string, quantity int, price decimal.Decimal) error {
+	// Set current user.
+	if err := s.repository.SetCurrentUser(ctx, userID); err != nil {
+		return fmt.Errorf("set current user: %w", err)
+	}
+
 	item := &model.Item{
 		ID:          itemID,
 		Name:        name,
@@ -100,7 +113,12 @@ func (s *Service) Update(ctx context.Context, itemID uuid.UUID, name, descriptio
 }
 
 // Delete removes an item by its ID.
-func (s *Service) Delete(ctx context.Context, itemID uuid.UUID) error {
+func (s *Service) Delete(ctx context.Context, userID, itemID uuid.UUID) error {
+	// Set current user.
+	if err := s.repository.SetCurrentUser(ctx, userID); err != nil {
+		return fmt.Errorf("set current user: %w", err)
+	}
+
 	if err := s.repository.DeleteItem(ctx, itemID); err != nil {
 		return fmt.Errorf("delete item: %w", err)
 	}
