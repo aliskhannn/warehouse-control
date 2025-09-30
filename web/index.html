@@ -1,74 +1,239 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ru">
 <head>
-	<meta charset="UTF-8">
-	<title>Warehouse Control</title>
-	<link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>WarehouseControl UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { margin-top: 40px; }
+        .hidden { display: none; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
+        input, select, button, textarea { margin: 5px; padding: 5px; }
+        .actions button { margin-right: 5px; }
+        .error { color: red; }
+    </style>
 </head>
-
 <body>
-	<div class="login">
-		<h2>Login or Register</h2>
-		<div>
-			<label>Username:</label>
-			<input type="text" id="username" />
-		</div>
-		<div>
-			<label>Password:</label>
-			<input type="password" id="password" />
-		</div>
-		<div>
-			<label>Role:</label>
-			<select id="role">
-				<option value="viewer">Viewer</option>
-				<option value="manager">Manager</option>
-				<option value="admin">Admin</option>
-			</select>
-		</div>
-		<button id="loginBtn">Login</button>
-		<button id="registerBtn">Register</button>
-		<div id="loginMsg"></div>
-	</div>
+<h1>WarehouseControl</h1>
 
-	<div class="app" style="display:none;">
-		<h2>Items</h2>
-		<button id="addItemBtn" style="display:none;">Add Item</button>
-		<table border="1">
-			<thead>
-				<tr>
-					<th>ID</th>
-					<th>Name</th>
-					<th>Description</th>
-					<th>Quantity</th>
-					<th>Price</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody id="itemsTable"></tbody>
-		</table>
-	</div>
+<!-- Авторизация -->
+<h2>Авторизация</h2>
+<div>
+    <input type="text" id="username" placeholder="Имя пользователя">
+    <input type="password" id="password" placeholder="Пароль">
+    <select id="role">
+        <option value="admin">admin</option>
+        <option value="manager">manager</option>
+        <option value="viewer">viewer</option>
+    </select>
+    <button onclick="register()">Регистрация</button>
+    <button onclick="login()">Войти</button>
+    <span id="authStatus"></span>
+</div>
 
-	<div id="historyModal" class="modal">
-		<div class="modal-content">
-			<span class="close">&times;</span>
-			<h3>Item History</h3>
-			<table border="1">
-				<thead>
-					<tr>
-						<th>Action</th>
-						<th>Changed By</th>
-						<th>Changed At</th>
-						<th>Old Data</th>
-						<th>New Data</th>
-					</tr>
-				</thead>
-				<tbody id="historyTable"></tbody>
-			</table>
-		</div>
-	</div>
+<!-- Товары -->
+<h2>Список товаров</h2>
+<button onclick="loadItems()">Обновить</button>
+<table id="itemsTable">
+    <thead>
+    <tr>
+        <th>Название</th>
+        <th>Описание</th>
+        <th>Количество</th>
+        <th>Цена</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-	<script src="app.js"></script>
+<!-- Форма добавления / редактирования -->
+<h3>Добавить / Редактировать товар</h3>
+<div>
+    <input type="hidden" id="itemId">
+    <input type="text" id="itemName" placeholder="Название">
+    <input type="text" id="itemDescription" placeholder="Описание">
+    <input type="number" id="itemQuantity" placeholder="Количество">
+    <input type="number" step="0.01" id="itemPrice" placeholder="Цена">
+    <button onclick="saveItem()">Сохранить</button>
+</div>
+
+<!-- История -->
+<h2>История изменений</h2>
+<div>
+    <input type="text" id="historyItemId" placeholder="ID товара">
+    <button onclick="loadHistory()">Показать историю</button>
+    <table id="historyTable">
+        <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Пользователь</th>
+            <th>Действие</th>
+            <th>Старые данные</th>
+            <th>Новые данные</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div class="error" id="error"></div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api';
+    let token = localStorage.getItem('token') || '';
+
+    function showError(msg) {
+      document.getElementById('error').textContent = msg;
+      setTimeout(() => document.getElementById('error').textContent = '', 5000);
+    }
+
+    async function register() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      try {
+        const res = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, role })
+        });
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+        alert('Пользователь создан с id ' + data.result.id);
+      } catch (e) { showError(e.message); }
+    }
+
+    async function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+        token = data.result.token;
+        localStorage.setItem('token', token);
+        document.getElementById('authStatus').textContent = 'Вошли';
+        loadItems();
+      } catch (e) { showError(e.message); }
+    }
+
+    async function loadItems() {
+      try {
+        const res = await fetch(`${API_URL}/items`);
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+        const tbody = document.querySelector('#itemsTable tbody');
+        tbody.innerHTML = '';
+        data.result.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.description}</td>
+            <td>${item.quantity}</td>
+            <td>${item.price}</td>
+            <td class="actions">
+              ${token ? `<button onclick="editItem('${item.id}','${item.name}','${item.description}',${item.quantity},${item.price})">Ред.</button>` : ''}
+              ${token ? `<button onclick="deleteItem('${item.id}')">Удал.</button>` : ''}
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { showError(e.message); }
+    }
+
+    function editItem(id, name, desc, quantity, price) {
+      document.getElementById('itemId').value = id;
+      document.getElementById('itemName').value = name;
+      document.getElementById('itemDescription').value = desc;
+      document.getElementById('itemQuantity').value = quantity;
+      document.getElementById('itemPrice').value = price;
+    }
+
+    async function saveItem() {
+      const id = document.getElementById('itemId').value;
+      const name = document.getElementById('itemName').value;
+      const description = document.getElementById('itemDescription').value;
+      const quantity = parseInt(document.getElementById('itemQuantity').value);
+      const price = document.getElementById('itemPrice').value;
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `${API_URL}/items/${id}` : `${API_URL}/items`;
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name, description, quantity, price })
+        });
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+        alert('Сохранено');
+        loadItems();
+      } catch (e) { showError(e.message); }
+    }
+
+    async function deleteItem(id) {
+      if (!confirm('Удалить товар?')) return;
+      try {
+        const res = await fetch(`${API_URL}/items/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+        loadItems();
+      } catch (e) { showError(e.message); }
+    }
+
+    async function loadHistory() {
+        const id = document.getElementById('historyItemId').value;
+        try {
+            const res = await fetch(`${API_URL}/audit/items/${id}/history`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok) return showError(data.error);
+
+            const tbody = document.querySelector('#historyTable tbody');
+            tbody.innerHTML = '';
+
+            for (const h of data.result) {
+                // Получаем username для changed_by
+                let username = h.changed_by; // по умолчанию показываем UUID
+                try {
+                    const userRes = await fetch(`${API_URL}/users/${h.changed_by}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        username = userData.result.username;
+                    }
+                } catch (e) {
+                    console.warn('Не удалось получить username:', e);
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${h.changed_at}</td>
+                    <td>${username}</td>
+                    <td>${h.action}</td>
+                    <td><pre>${JSON.stringify(h.old_data,null,2)}</pre></td>
+                    <td><pre>${JSON.stringify(h.new_data,null,2)}</pre></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        } catch (e) { showError(e.message); }
+    }
+
+    // при загрузке
+    if (token) document.getElementById('authStatus').textContent = 'Вошли';
+    loadItems();
+</script>
 </body>
-
 </html>

@@ -7,6 +7,7 @@ import (
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/audit"
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/auth"
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/item"
+	"github.com/aliskhannn/warehouse-control/internal/api/handler/user"
 	"github.com/aliskhannn/warehouse-control/internal/config"
 	"github.com/aliskhannn/warehouse-control/internal/middleware"
 )
@@ -14,15 +15,23 @@ import (
 // New creates a new Gin engine and sets up routes for the API.
 func New(
 	authHandler *auth.Handler,
+	userHandler *user.Handler,
 	itemHandler *item.Handler,
 	auditHandler *audit.Handler,
 	cfg *config.Config,
 ) *ginext.Engine {
 	e := ginext.New()
 
+	e.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
 	e.Use(ginext.Logger())
 	e.Use(ginext.Recovery())
-	e.Use(cors.Default())
 
 	api := e.Group("/api")
 	{
@@ -52,6 +61,13 @@ func New(
 				// DELETE /items/:id: admin only
 				itemGroup.DELETE("/:id", middleware.RequireRole("admin"), itemHandler.Delete)
 			}
+		}
+
+		// --- User routes ---
+		userGroup := api.Group("/users")
+		userGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL)) // если нужен JWT
+		{
+			userGroup.GET("/:id", userHandler.GetByID) // GET /api/users/:id
 		}
 
 		// --- Audit routes ---

@@ -3,7 +3,7 @@
 CREATE TABLE item_history
 (
     id         UUID PRIMARY KEY         DEFAULT uuid_generate_v4(),
-    item_id    UUID        NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    item_id    UUID        NOT NULL,
     action     item_action NOT NULL,
     changed_by UUID        NOT NULL REFERENCES users (id),
     changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

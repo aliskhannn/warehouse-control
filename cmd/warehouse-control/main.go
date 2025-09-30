@@ -14,6 +14,7 @@ import (
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/audit"
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/auth"
 	"github.com/aliskhannn/warehouse-control/internal/api/handler/item"
+	"github.com/aliskhannn/warehouse-control/internal/api/handler/user"
 	"github.com/aliskhannn/warehouse-control/internal/api/router"
 	"github.com/aliskhannn/warehouse-control/internal/api/server"
 	"github.com/aliskhannn/warehouse-control/internal/config"
@@ -47,10 +48,11 @@ func main() {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	// Initialize user repository, service, and handler for auth endpoints.
+	// Initialize user repository, service, and handlers for auth and user endpoints.
 	userRepo := repouser.NewRepository(db)
 	userService := serviceuser.NewService(userRepo, cfg)
 	authHandler := auth.NewHandler(userService, val)
+	userHandler := user.NewHandler(userService)
 
 	// Initialize item repository, service.
 	itemRepo := repoitem.NewRepository(db)
@@ -61,7 +63,7 @@ func main() {
 	auditHandler := audit.NewHandler(itemService)
 
 	// Initialize API router and HTTP server.
-	r := router.New(authHandler, itemHandler, auditHandler, cfg)
+	r := router.New(authHandler, userHandler, itemHandler, auditHandler, cfg)
 	s := server.New(cfg.Server.HTTPPort, r)
 
 	// Start HTTP server in a separate goroutine.

@@ -10,7 +10,7 @@ BEGIN
             NULL,
             to_jsonb(NEW));
     RETURN NEW;
-end;
+END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION log_item_update() RETURNS TRIGGER AS
@@ -39,20 +39,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_item_insert ON items;
 CREATE TRIGGER trg_item_insert
     AFTER INSERT
     ON items
     FOR EACH ROW
 EXECUTE FUNCTION log_item_insert();
 
+DROP TRIGGER IF EXISTS trg_item_update ON items;
 CREATE TRIGGER trg_item_update
     AFTER UPDATE
     ON items
     FOR EACH ROW
 EXECUTE FUNCTION log_item_update();
 
+DROP TRIGGER IF EXISTS trg_item_delete ON items;
 CREATE TRIGGER trg_item_delete
-    AFTER DELETE
+    BEFORE DELETE
     ON items
     FOR EACH ROW
 EXECUTE FUNCTION log_item_delete();

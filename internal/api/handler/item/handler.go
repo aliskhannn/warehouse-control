@@ -54,7 +54,7 @@ type CreateRequest struct {
 	Name        string          `json:"name" validate:"required"`
 	Description string          `json:"description"`
 	Quantity    int             `json:"quantity" validate:"required,min=0"`
-	Price       decimal.Decimal `json:"price" validate:"required,gt=0"`
+	Price       decimal.Decimal `json:"price" validate:"required"`
 }
 
 // UpdateRequest represents the JSON request body for updating an item.
@@ -62,7 +62,7 @@ type UpdateRequest struct {
 	Name        string          `json:"name" validate:"required"`
 	Description string          `json:"description"`
 	Quantity    int             `json:"quantity" validate:"required,min=0"`
-	Price       decimal.Decimal `json:"price" validate:"required,gt=0"`
+	Price       decimal.Decimal `json:"price" validate:"required"`
 }
 
 // Create handles creating a new item.

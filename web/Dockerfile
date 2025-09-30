@@ -1,9 +1,13 @@
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY . .
-# No build step needed for pure HTML/JS/CSS
+# Базовый nginx образ
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY --from=build /app /usr/share/nginx/html
+
+# Копируем конфиг nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Копируем только фронт: html, css, js
+COPY . /usr/share/nginx/html
+
+# Порт 80
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]

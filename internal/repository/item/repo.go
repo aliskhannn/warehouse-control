@@ -177,10 +177,25 @@ func (r *Repository) GetItemHistory(ctx context.Context, itemID uuid.UUID) ([]*m
 	var history []*model.ItemHistory
 	for rows.Next() {
 		var h model.ItemHistory
+		var oldData, newData sql.NullString
+
 		if err := rows.Scan(
-			&h.ID, &h.ItemID, &h.Action, &h.ChangedBy, &h.ChangedAt, &h.OldData, &h.NewData,
+			&h.ID, &h.ItemID, &h.Action, &h.ChangedBy, &h.ChangedAt, &oldData, &newData,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan item history: %w", err)
+		}
+
+		// Convert into json.RawMessage
+		if oldData.Valid {
+			h.OldData = json.RawMessage(oldData.String)
+		} else {
+			h.OldData = json.RawMessage(`{}`)
+		}
+
+		if newData.Valid {
+			h.NewData = json.RawMessage(newData.String)
+		} else {
+			h.NewData = json.RawMessage(`{}`)
 		}
 
 		history = append(history, &h)
@@ -210,9 +225,10 @@ func (r *Repository) CompareVersions(oldData, newData json.RawMessage) (map[stri
 
 // SetCurrentUser sets the current user in the PostgreSQL session for auditing.
 func (r *Repository) SetCurrentUser(ctx context.Context, userID uuid.UUID) error {
-	_, err := r.db.Master.ExecContext(ctx, "SET app.current_user_id = $1", userID)
+	_, err := r.db.Master.ExecContext(ctx, "SELECT set_config('app.current_user_id', $1, false)", userID.String())
 	if err != nil {
 		return fmt.Errorf("failed to set current_user_id: %w", err)
 	}
+
 	return nil
 }
