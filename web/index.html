@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Warehouse Control</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+	<div class="login">
+		<h2>Login or Register</h2>
+		<div>
+			<label>Username:</label>
+			<input type="text" id="username" />
+		</div>
+		<div>
+			<label>Password:</label>
+			<input type="password" id="password" />
+		</div>
+		<div>
+			<label>Role:</label>
+			<select id="role">
+				<option value="viewer">Viewer</option>
+				<option value="manager">Manager</option>
+				<option value="admin">Admin</option>
+			</select>
+		</div>
+		<button id="loginBtn">Login</button>
+		<button id="registerBtn">Register</button>
+		<div id="loginMsg"></div>
+	</div>
+
+	<div class="app" style="display:none;">
+		<h2>Items</h2>
+		<button id="addItemBtn" style="display:none;">Add Item</button>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Description</th>
+					<th>Quantity</th>
+					<th>Price</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody id="itemsTable"></tbody>
+		</table>
+	</div>
+
+	<div id="historyModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<h3>Item History</h3>
+			<table border="1">
+				<thead>
+					<tr>
+						<th>Action</th>
+						<th>Changed By</th>
+						<th>Changed At</th>
+						<th>Old Data</th>
+						<th>New Data</th>
+					</tr>
+				</thead>
+				<tbody id="historyTable"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<script src="app.js"></script>
+</body>
+
+</html>
