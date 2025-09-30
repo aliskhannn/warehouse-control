@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrItemNotFound = errors.New("item not found")
+	ErrNoItemsFound = errors.New("no items found")
 )
 
 // Repository provides methods to interact with items table.
@@ -99,6 +100,14 @@ func (r *Repository) GetAllItems(ctx context.Context, nameFilter string) ([]*mod
 		}
 
 		items = append(items, &i)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate items: %w", err)
+	}
+
+	if len(items) == 0 {
+		return nil, ErrNoItemsFound
 	}
 
 	return items, nil
