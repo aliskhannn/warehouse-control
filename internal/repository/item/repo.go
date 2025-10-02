@@ -36,7 +36,7 @@ func (r *Repository) CreateItem(ctx context.Context, item *model.Item) (uuid.UUI
 		RETURNING id, created_at, updated_at
 	`
 
-	err := r.db.Master.QueryRowContext(
+	err := r.db.QueryRowContext(
 		ctx, query, item.Name, item.Description, item.Quantity, item.Price,
 	).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
@@ -55,7 +55,7 @@ func (r *Repository) GetItemByID(ctx context.Context, itemID uuid.UUID) (*model.
     `
 
 	var i model.Item
-	err := r.db.Master.QueryRowContext(ctx, query, itemID).Scan(
+	err := r.db.QueryRowContext(ctx, query, itemID).Scan(
 		&i.ID, &i.Name, &i.Description, &i.Quantity, &i.Price, &i.CreatedAt, &i.UpdatedAt,
 	)
 	if err != nil {
@@ -78,7 +78,7 @@ func (r *Repository) GetAllItems(ctx context.Context, nameFilter string) ([]*mod
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.Master.QueryContext(ctx, query, nameFilter)
+	rows, err := r.db.QueryContext(ctx, query, nameFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items: %w", err)
 	}
@@ -121,7 +121,7 @@ func (r *Repository) UpdateItem(ctx context.Context, item *model.Item) error {
 		WHERE id = $5
 	`
 
-	res, err := r.db.Master.ExecContext(ctx, query, item.Name, item.Description, item.Quantity, item.Price, item.ID)
+	res, err := r.db.ExecContext(ctx, query, item.Name, item.Description, item.Quantity, item.Price, item.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update item: %w", err)
 	}
@@ -142,7 +142,7 @@ func (r *Repository) UpdateItem(ctx context.Context, item *model.Item) error {
 func (r *Repository) DeleteItem(ctx context.Context, itemID uuid.UUID) error {
 	query := `DELETE FROM items WHERE id = $1`
 
-	res, err := r.db.Master.ExecContext(ctx, query, itemID)
+	res, err := r.db.ExecContext(ctx, query, itemID)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
@@ -168,7 +168,7 @@ func (r *Repository) GetItemHistory(ctx context.Context, itemID uuid.UUID) ([]*m
 		ORDER BY changed_at DESC
 	`
 
-	rows, err := r.db.Master.QueryContext(ctx, query, itemID)
+	rows, err := r.db.QueryContext(ctx, query, itemID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query item history: %w", err)
 	}
@@ -225,7 +225,7 @@ func (r *Repository) CompareVersions(oldData, newData json.RawMessage) (map[stri
 
 // SetCurrentUser sets the current user in the PostgreSQL session for auditing.
 func (r *Repository) SetCurrentUser(ctx context.Context, userID uuid.UUID) error {
-	_, err := r.db.Master.ExecContext(ctx, "SELECT set_config('app.current_user_id', $1, false)", userID.String())
+	_, err := r.db.ExecContext(ctx, "SELECT set_config('app.current_user_id', $1, false)", userID.String())
 	if err != nil {
 		return fmt.Errorf("failed to set current_user_id: %w", err)
 	}

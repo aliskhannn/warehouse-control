@@ -32,7 +32,7 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) (uuid.UUI
 		RETURNING id;
 	`
 
-	err := r.db.Master.QueryRowContext(
+	err := r.db.QueryRowContext(
 		ctx, query, user.Username, user.PasswordHash, user.Role,
 	).Scan(&user.ID)
 	if err != nil {
@@ -50,7 +50,7 @@ func (r *Repository) GetUserByID(ctx context.Context, userID uuid.UUID) (*model.
         WHERE id = $1
     `
 	var u model.User
-	err := r.db.Master.QueryRowContext(ctx, query, userID).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&u.ID, &u.Username, &u.Role, &u.CreatedAt,
 	)
 	if err != nil {
@@ -72,7 +72,7 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
 	`
 
 	var user model.User
-	err := r.db.Master.QueryRowContext(ctx, query, username).Scan(
+	err := r.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.PasswordHash,
@@ -95,7 +95,7 @@ func (r *Repository) CheckUserExistsByUsername(ctx context.Context, username str
 	query := `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`
 
 	var exists bool
-	err := r.db.Master.QueryRowContext(ctx, query, username).Scan(&exists)
+	err := r.db.QueryRowContext(ctx, query, username).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if user exists: %w", err)
 	}
