@@ -45,27 +45,27 @@ func New(
 		// --- Item routes ---
 		itemGroup := api.Group("/items")
 		{
-			// Public GET routes (all roles)
+			// Public GET routes (all roles).
 			itemGroup.GET("", itemHandler.GetAll)
 			itemGroup.GET("/:id", itemHandler.GetByID)
 
-			// Protected routes (requires JWT)
+			// Protected routes (requires JWT).
 			itemGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL))
 			{
-				// POST /items: admin and manager
+				// POST /items: admin and manager.
 				itemGroup.POST("", middleware.RequireRole("admin", "manager"), itemHandler.Create)
 
-				// PUT /items/:id: admin and manager
+				// PUT /items/:id: admin and manager.
 				itemGroup.PUT("/:id", middleware.RequireRole("admin", "manager"), itemHandler.Update)
 
-				// DELETE /items/:id: admin only
+				// DELETE /items/:id: admin only.
 				itemGroup.DELETE("/:id", middleware.RequireRole("admin"), itemHandler.Delete)
 			}
 		}
 
 		// --- User routes ---
 		userGroup := api.Group("/users")
-		userGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL)) // если нужен JWT
+		userGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL))
 		{
 			userGroup.GET("/:id", userHandler.GetByID) // GET /api/users/:id
 		}
@@ -74,7 +74,7 @@ func New(
 		auditGroup := api.Group("/audit")
 		auditGroup.Use(middleware.Auth(cfg.JWT.Secret, cfg.JWT.TTL))
 		{
-			// Only admin can access audit endpoints
+			// Only admin can access audit endpoints.
 			auditGroup.Use(middleware.RequireRole("admin"))
 			auditGroup.GET("/items/:id/history", auditHandler.GetHistory)
 			auditGroup.POST("/items/compare", auditHandler.CompareVersions)
