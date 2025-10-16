@@ -190,12 +190,6 @@ func (h *Handler) GetAll(c *ginext.Context) {
 
 	items, err := h.service.GetAll(c.Request.Context(), nameFilter)
 	if err != nil {
-		if errors.Is(err, repoitem.ErrNoItemsFound) {
-			zlog.Logger.Error().Err(err).Msg("failed to get items")
-			response.Fail(c, http.StatusNotFound, err)
-			return
-		}
-
 		zlog.Logger.Error().Err(err).Msg("failed to get all items")
 		response.Fail(c, http.StatusInternalServerError, fmt.Errorf("failed to get items"))
 		return
